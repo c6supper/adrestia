@@ -109,8 +109,13 @@ void thread_teardown(unsigned int nr_threads,
 
 			if (t->dead)
 				continue;
-
+#ifdef __QNXNTO__
+			struct timespec ts;
+			timespec_get(&ts, TIME_UTC);
+			if (pthread_timedjoin(t->tid, NULL,&ts) != EOK)
+#else
 			if (pthread_tryjoin_np(t->tid, NULL))
+#endif
 				continue;
 
 			t->dead = 1;
@@ -123,6 +128,11 @@ void thread_teardown(unsigned int nr_threads,
 	free(threads);
 }
 
+#ifdef __QNXNTO__
+#include <sys/syspage.h>
+extern struct syspage_entry					*_syspage_ptr;
+#endif
+
 int main(int argc, char **argv)
 {
 	char *testname = NULL;
@@ -131,7 +141,11 @@ int main(int argc, char **argv)
 	int opt;
 	int i;
 
+#ifdef __QNXNTO__
+	num_cpus = _syspage_ptr->num_cpu;
+#else
 	num_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
 	num_threads = 1;
 
 	while ((opt = getopt(argc, argv, "a:l:Ls:t:")) != -1) {

@@ -1,4 +1,9 @@
-CFLAGS = -Wall -lpthread -I $(PWD)/include -g
+
+ifeq ($(OS),QNX)
+	CFLAGS = -Wall -I $(PWD)/include -g
+else
+	CFLAGS = -Wall -lpthread -I $(PWD)/include -g
+endif
 
 OBJS = wake.o stats.o
 

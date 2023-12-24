@@ -7,6 +7,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __QNXNTO__
+#include <sys/neutrino.h>
+typedef unsigned int cpu_set_t;
+#define CPU_ZERO(x) *x = 0
+#define CPU_SET(x,y) RMSK_SET(x,y)
+#endif
+
 extern int test_wakeup_single(void);
 extern int test_wakeup_periodic(void);
 
@@ -51,7 +58,12 @@ static inline void thread_pin(unsigned int cpu)
 	CPU_ZERO(&mask);
 	CPU_SET(cpu, &mask);
 
-	if (sched_setaffinity(0, sizeof(cpu_set_t), &mask)) {
+#ifdef __QNXNTO__
+	if (ThreadCtl(_NTO_TCTL_RUNMASK, &mask)) 
+#else
+	if (sched_setaffinity(0, sizeof(cpu_set_t), &mask)) 
+#endif
+	{
 		perror("sched_setaffinity");
 		abort();
 	}
@@ -67,7 +79,8 @@ static inline void thread_unpin(void)
 	for (i = 0; i < num_cpus; i++)
 		CPU_SET(i, &mask);
 
-	if (sched_setaffinity(0, sizeof(cpu_set_t), &mask)) {
+	if (sched_setaffinity(0, sizeof(cpu_set_t), &mask))
+	{
 		perror("sched_setaffinity");
 		abort();
 	}
